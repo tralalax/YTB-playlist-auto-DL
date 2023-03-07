@@ -2,8 +2,11 @@
 python --version 3>NUL
 if errorlevel 1 goto errorNoPython
 
-pip install -r requirements.txt
-python __main__.py
+
+cd YTB-playlist-Auto-DL
+
+YTB-playlist-Auto-DL\YTBplDLvenv\Scripts\activate.bat && pip install --upgrade pip && pip install -r requirements.txt && python __main__.py && deactivate
+
 
 pause
 
