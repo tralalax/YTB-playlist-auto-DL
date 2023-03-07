@@ -16,7 +16,7 @@ def loadConfig():
         return config_object
 
     except Exception as err:
-        logging.error('couldn\'t load config file')
+        logging.error('couldn\'t load config file file')
         return None
 
 config_object = loadConfig()
@@ -24,15 +24,6 @@ config_object = loadConfig()
 if config_object is not None:
     playlistConfig = config_object['PLAYLIST']
     generalConfig = config_object['GENERAL']
-
-
-# check if old_id folder already exist
-def checkExistingIDfolder():
-    if os.path.isdir(os.path.join(os.getcwd(),'old_id')):
-        return True
-    else:
-        logging.info('couldn\'t load old_id folder, creating a new one')
-        os.makedirs(os.path.join(os.getcwd(),'old_id'))
 
 
 def getVideoIDbyPlaylist():
@@ -127,7 +118,6 @@ def getVideoIDbyPlaylist():
                 videoIdList.clear
 
 
-
 plIdFromConfig = []
 
 # del ID file that has been removed from config file
@@ -142,8 +132,10 @@ def delOldIdFile():
         # get playlist ID and store it in a list
         plIdFromConfig.append(plUrl.split('list=',1)[1])
 
+    print(plIdFromConfig)
+
     # check if the ID file is in the plIdFromConfig
-    for extraFile in os.listdir(os.path.join(os.getcwd(),'old_id')):
+    for extraFile in os.listdir(os.path.join(os.getcwd()+'/old_id')):
         
         # remove the .json to the file
         extraFile = extraFile[:-5]
@@ -151,11 +143,9 @@ def delOldIdFile():
         if extraFile not in plIdFromConfig:
 
             # del the none used file
-            os.remove(os.path.join(os.getcwd(),'old_id',extraFile+'.json'))
+            os.remove(os.path.join(os.getcwd()+'/old_id'+extraFile+'.json'))
 
     plIdFromConfig.clear
-
-
 
 # download a list of video ID
 def downloadList(IdList):
@@ -188,11 +178,11 @@ def downloadList(IdList):
         print(ytbVideo)
 
 
-
-#checkExistingIDfolder()
-#delOldIdFile()
+delOldIdFile()
 #getVideoIDbyPlaylist()
 #downloadList(["80MGUrKXr58"])
 
 #https://www.youtube.com/watch?v=80MGUrKXr58
 
+
+# TODO del json file if playlist is removed from config
