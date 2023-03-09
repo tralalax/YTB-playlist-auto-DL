@@ -7,34 +7,6 @@ import logging
 from configparser import ConfigParser
 
 
-# load config
-def loadConfig():
-    try:
-        config_object = ConfigParser()
-        config_object.read("./config.ini")
-
-        return config_object
-
-    except Exception as err:
-        logging.error('couldn\'t load config file')
-        return None
-
-config_object = loadConfig()
-
-if config_object is not None:
-    playlistConfig = config_object['PLAYLIST']
-    generalConfig = config_object['GENERAL']
-
-
-# check if old_id folder already exist
-def checkExistingIDfolder():
-    if os.path.isdir(os.path.join(os.getcwd(),'old_id')):
-        return True
-    else:
-        logging.info('couldn\'t load old_id folder, creating a new one')
-        os.makedirs(os.path.join(os.getcwd(),'old_id'))
-
-
 def getVideoIDbyPlaylist():
 
     # get all playlist in a list
@@ -42,8 +14,8 @@ def getVideoIDbyPlaylist():
 
         videoIdtoRewrite = []
         videoIdList = []
-        videoIdToDl = []
         prevIdFileID = []
+        videoIdToDl = []
 
         # get playlist URl from the config file
         plUrl = playlistConfig[selectedPlaylist]
@@ -126,6 +98,8 @@ def getVideoIDbyPlaylist():
 
                 videoIdList.clear
 
+    return videoIdToDl
+
 
 
 plIdFromConfig = []
@@ -151,7 +125,10 @@ def delOldIdFile():
         if extraFile not in plIdFromConfig:
 
             # del the none used file
-            os.remove(os.path.join(os.getcwd(),'old_id',extraFile+'.json'))
+            try:
+                os.remove(os.path.join(os.getcwd(),'old_id',extraFile+'.json'))
+            except Exception as err:
+                logging.error("something went wrong during the suppression of an old id file, feel free to report this issue on github" + err)
 
     plIdFromConfig.clear
 
@@ -183,16 +160,93 @@ def downloadList(IdList):
 
         # download the stream video
         if ytbVideo is not None:
-            ytbVideo.download(output_path=os.getcwd())
+
+            try:
+                # ytbVideo.download(output_path=downloadPath)
+                print("downloading : "+str(ytbVideo))
+            except PermissionError as err:
+                logging.error("raised permission error : " + err)
+            except Exception as err:
+                logging.fatal("something went wrong during the download, feel free to report this issue on github : " + err)
+
+
+
+# MAIN
+if __name__ == '__main__':
+
+    # check config file
+    try:
+        config_object = ConfigParser(allow_no_value=True)
+        config_object.read("./config.ini")
+
+        playlistConfig = config_object['PLAYLIST']
+        generalConfig = config_object['GENERAL']
+
+    except Exception as err:
+        logging.error('couldn\'t load config file')
+        exit(1)
+
+
+    # check old_id directory
+    if os.path.isdir(os.path.join(os.getcwd(),'old_id')):
+        pass
+    else:
+        logging.info('couldn\'t load old_id folder, creating a new one')
+        try:
+            os.makedirs(os.path.join(os.getcwd(),'old_id'))
+            logging.info('successfully created old_id directory')
+        except Exception as err:
+            logging.error('couldn\'t create old_id directory')
+            exit(1)
+
+
+    # delete non used id file, if it's enable in the config
+    if config_object.getboolean(section='GENERAL', option='del_non_used_id_file'):
+        delOldIdFile()
+        logging.info("cleared non used json file")
+
+
+    # get downlaod path or create a folder Download
+    if generalConfig['download_path'] == "" or generalConfig['download_path'] == " ":
+        logging.info("no download path selected in cofig file, defaulting download location to the Download folder")
         
-        print(ytbVideo)
+        if os.path.isdir(os.path.join(os.getcwd(),'Download')):
+            downloadPath = os.path.join(os.getcwd(),'Download')
 
+        else:
+            logging.info('couldn\'t load Download folder, creating a new one')
+            
+            try:
+                os.makedirs(os.path.join(os.getcwd(),'Download'))
+                downloadPath = os.path.join(os.getcwd(),'Download')
 
+                logging.info('successfully created Download directory')
 
-#checkExistingIDfolder()
-#delOldIdFile()
-#getVideoIDbyPlaylist()
-#downloadList(["80MGUrKXr58"])
+            except Exception as err:
+                logging.error('couldn\'t create Download directory')
+                exit(1)
 
-#https://www.youtube.com/watch?v=80MGUrKXr58
+    else:
+        # get the path set in config file
+        downloadPath = os.path.abspath(os.path.join(os.getcwd(), generalConfig['download_path']))
+        # prevent incorrectly decoded utf-8 tring (shit like Ã©)
+        downloadPath = downloadPath.encode('iso-8859-1').decode('utf-8')
 
+    print(downloadPath)
+
+    # check for new video to download
+    logging.info("checking for new video to download...")
+    videoIdToDl = getVideoIDbyPlaylist()
+
+    # download video
+    if videoIdToDl:
+        logging.info("downloading new videos...")
+        downloadList(IdList=videoIdToDl)
+
+    else:
+        logging.info("no video was found, nothing was downloaded")
+
+    # exit the script
+    logging.info("exiting the script")
+    del videoIdToDl
+    exit(0)
