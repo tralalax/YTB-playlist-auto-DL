@@ -43,7 +43,9 @@ def getVideoIDbyPlaylist():
                 pl = Playlist(plUrl)
                 
                 # get video ID in the request result
-                for url, index in pl.video_urls:
+                limiter = 0
+                for url in pl.video_urls:
+                    limiter = limiter + 1
                     url = str(url)
 
                     # get video ID from video URL
@@ -54,7 +56,7 @@ def getVideoIDbyPlaylist():
                         videoIdToDl.append(videoId)
 
                     # limit
-                    if index == generalConfig['max_video_per_playlist']:
+                    if limiter == generalConfig['max_video_per_playlist']:
                         break
                     
 
@@ -88,16 +90,11 @@ def getVideoIDbyPlaylist():
                 # create a playlist object
                 pl = Playlist(plUrl)
 
-                print("plUrl : "+plUrl)
-                print(pl)
-
                 # get ID of every video
                 for url in pl.video_urls:
                     url = str(url)
 
                     videoId = url.split('=',1)[1]
-
-                    print(videoId)
 
                     videoIdList.append(videoId)
                     videoIdToDl.append(videoId)
@@ -152,8 +149,6 @@ def downloadList(IdList):
 
     # select one video ID from the list
     for video in IdList:
-
-        print(baseVideoUrl+video)
 
         # create a YouTube object
         ytb = YouTube(baseVideoUrl+video)
