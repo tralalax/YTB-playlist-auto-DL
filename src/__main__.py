@@ -1,21 +1,27 @@
-from pytube import YouTube
-from pytube import Playlist
 import json
 import io
 import os
 import logging
 from configparser import ConfigParser
 
+# import pytube
+try:
+    from pytube import YouTube
+    from pytube import Playlist
+except ImportError as err:
+    logging.error("couldn't import module 'pytube' : "+err)
+    exit(1)
+
 
 def getVideoIDbyPlaylist():
 
+    videoIdToDl = []
+    videoIdtoRewrite = []
+    videoIdList = []
+    prevIdFileID = []
+
     # get all playlist in a list
     for selectedPlaylist in playlistConfig:
-
-        videoIdtoRewrite = []
-        videoIdList = []
-        prevIdFileID = []
-        videoIdToDl = []
 
         # get playlist URl from the config file
         plUrl = playlistConfig[selectedPlaylist]
@@ -25,7 +31,7 @@ def getVideoIDbyPlaylist():
         plId = plUrl.split('list=',1)[1]
 
         if os.path.isfile(os.path.join(os.getcwd(), 'old_id', plId+'.json')):
-            print("FILE ALREADY EXIST FOR : "+plId)
+            logging.info("file : "+plId+" already exist, loading it")
 
             # load existing old_ID file
             with open(os.path.join(os.getcwd(), 'old_id', plId+'.json')) as prevIdjson:
@@ -37,15 +43,20 @@ def getVideoIDbyPlaylist():
                 pl = Playlist(plUrl)
                 
                 # get video ID in the request result
-                for url in pl.video_urls:
+                for url, index in pl.video_urls:
                     url = str(url)
 
+                    # get video ID from video URL
                     videoId = url.split('=',1)[1]
 
-                    if videoId in prevIdFileID:
-                        pass
-                    else:
+                    # compare videoId with the videoId in json file
+                    if not videoId in prevIdFileID:
                         videoIdToDl.append(videoId)
+
+                    # limit
+                    if index == generalConfig['max_video_per_playlist']:
+                        break
+                    
 
                 for i in prevIdFileID:
                     videoIdList.append(i)
@@ -69,7 +80,7 @@ def getVideoIDbyPlaylist():
 
 
         else:
-            print("CREATING NEW FILE FOR : "+plId)
+            logging.info("file : "+plId+" dosen't exist, creating it")
 
             # no file found, create new one and write request result
             with open(os.path.join(os.getcwd(), 'old_id', plId+'.json'), mode='x') as curentJsonFile:
@@ -162,8 +173,8 @@ def downloadList(IdList):
         if ytbVideo is not None:
 
             try:
-                # ytbVideo.download(output_path=downloadPath)
-                print("downloading : "+str(ytbVideo))
+                #ytbVideo.download(output_path=downloadPath)
+                pass
             except PermissionError as err:
                 logging.error("raised permission error : " + err)
             except Exception as err:
@@ -190,6 +201,7 @@ if __name__ == '__main__':
     # check old_id directory
     if os.path.isdir(os.path.join(os.getcwd(),'old_id')):
         pass
+
     else:
         logging.info('couldn\'t load old_id folder, creating a new one')
         try:
@@ -215,7 +227,7 @@ if __name__ == '__main__':
 
         else:
             logging.info('couldn\'t load Download folder, creating a new one')
-            
+
             try:
                 os.makedirs(os.path.join(os.getcwd(),'Download'))
                 downloadPath = os.path.join(os.getcwd(),'Download')
@@ -232,11 +244,22 @@ if __name__ == '__main__':
         # prevent incorrectly decoded utf-8 tring (shit like Ã©)
         downloadPath = downloadPath.encode('iso-8859-1').decode('utf-8')
 
-    print(downloadPath)
 
     # check for new video to download
     logging.info("checking for new video to download...")
-    videoIdToDl = getVideoIDbyPlaylist()
+
+    # check if there is playlist in PLAYSLIST section in config file
+    playlistInConfig = False
+    for i in playlistConfig:
+        if not playlistInConfig:
+            playlistInConfig = True
+
+    if not playlistInConfig:
+        logging.error("no playlist found in config file section PLAYLIST")
+        exit(1)
+    else:  
+        videoIdToDl = getVideoIDbyPlaylist()
+
 
     # download video
     if videoIdToDl:
@@ -244,9 +267,13 @@ if __name__ == '__main__':
         downloadList(IdList=videoIdToDl)
 
     else:
-        logging.info("no video was found, nothing was downloaded")
+        logging.info("no new video was found, nothing was downloaded")
 
     # exit the script
     logging.info("exiting the script")
     del videoIdToDl
     exit(0)
+
+
+# TODO logging in file / logging in console
+# TODO sub-folder by playlist
