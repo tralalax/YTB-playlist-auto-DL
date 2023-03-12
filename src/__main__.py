@@ -173,8 +173,7 @@ def downloadList(IdList):
         if ytbVideo is not None:
 
             try:
-                #ytbVideo.download(output_path=downloadPath)
-                pass
+                ytbVideo.download(output_path=downloadPath)
             except PermissionError as err:
                 logging.error("raised permission error : " + err)
             except Exception as err:
