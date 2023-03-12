@@ -23,7 +23,7 @@ Make sure to edit the configuration file once it is installed.
 
 ### Run manually
 if you want to use this script manually, follow these steps :
-1. download the FILE and the FILE in a folder
+1. download the [main.py](https://github.com/tralalax/YTB-playlist-auto-DL/blob/main/src/__main__.py) file and the [config.ini](https://github.com/tralalax/YTB-playlist-auto-DL/blob/main/config.ini) file in a folder
 2. create a python venv with `python -m venv YTBplDLvenv` activate it with `YTBplDLvenv\Scripts\activate` then, install the requirements `pip install -r requirements.txt`
 __OR__
 you can simply install the requirements with `pip install -r requirements.txt`
